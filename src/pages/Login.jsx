@@ -3,13 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import '../App.css'
 
-export function Signup() {
+export function Login() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
-    password: '',
-    confirmPassword: '',
-    nick_name: ''
+    password: ''
   });
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -24,30 +22,29 @@ export function Signup() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage(''); // 에러 메시지 초기화
-    
-    // 패스워드 확인 검증
-    if (formData.password !== formData.confirmPassword) {
-      setErrorMessage('패스워드가 일치하지 않습니다.');
-      return;
-    }
 
     try {
       // API 호출
-      const response = await axios.post('/api/user/signup', {
+      const response = await axios.post('/api/user/login', {
         email: formData.email,
-        password: formData.password,
-        nick_name: formData.nick_name
+        password: formData.password
       });
 
-      console.log('회원가입 성공:', response.data);
-      // 회원가입 성공 페이지로 이동
-      navigate('/signup/success');
+      console.log('로그인 성공:', response.data);
+      
+      // 로그인 성공 시 사용자 정보를 localStorage에 저장
+      if (response.data.status === 'success' && response.data.data) {
+        localStorage.setItem('user', JSON.stringify(response.data.data));
+      }
+      
+      // 로그인 성공 시 홈으로 이동
+      navigate('/');
     } catch (error) {
-      console.error('회원가입 실패:', error);
+      console.error('로그인 실패:', error);
       if (error.response) {
         // 서버에서 응답이 온 경우
-        const errorMsg = error.response.data?.message || error.response.statusText || '회원가입에 실패했습니다.';
-        setErrorMessage(`회원가입 실패: ${errorMsg}`);
+        const errorMsg = error.response.data?.message || error.response.statusText || '로그인에 실패했습니다.';
+        setErrorMessage(`로그인 실패: ${errorMsg}`);
       } else if (error.request) {
         // 요청은 보냈지만 응답을 받지 못한 경우
         setErrorMessage('서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.');
@@ -59,10 +56,10 @@ export function Signup() {
   };
 
   return (
-    <div className="signup-container">
-      <h1>회원가입</h1>
-      <form onSubmit={handleSubmit} className="signup-form">
-      <div className="form-group">
+    <div className="login-container">
+      <h1>로그인</h1>
+      <form onSubmit={handleSubmit} className="login-form">
+        <div className="form-group">
           <label htmlFor="email">이메일</label>
           <input
             type="email"
@@ -86,33 +83,9 @@ export function Signup() {
             placeholder="패스워드를 입력하세요"
           />
         </div>
-        <div className="form-group">
-          <label htmlFor="confirmPassword">패스워드 확인</label>
-          <input
-            type="password"
-            id="confirmPassword"
-            name="confirmPassword"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            required
-            placeholder="패스워드를 다시 입력하세요"
-          />
-        </div>
-        <div className="form-group">
-          <label htmlFor="nick_name">사용자 이름</label>
-          <input
-            type="text"
-            id="nick_name"
-            name="nick_name"
-            value={formData.nick_name}
-            onChange={handleChange}
-            required
-            placeholder="사용자 이름을 입력하세요"
-          />
-        </div>
         <div className="form-actions">
           <button type="submit" className="submit-btn">
-            회원가입
+            로그인
           </button>
           <button type="button" onClick={() => navigate('/')} className="cancel-btn">
             취소
