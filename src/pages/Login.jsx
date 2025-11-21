@@ -1,103 +1,112 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import axios from 'axios'
-import '../App.css'
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios, { Axios } from "axios";
+// AuthProvider의 상태와 함수들을 접근하는 hook(함수)
+import useAuth from "../hooks/useAuth.js"
 
-export function Login() {
-  const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  });
-  const [errorMessage, setErrorMessage] = useState('');
+function Login() {
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [errMsg, setErrMsg] = useState("");
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setErrorMessage(''); // 에러 메시지 초기화
-
-    try {
-      // API 호출
-      const response = await axios.post('/api/user/login', {
-        email: formData.email,
-        password: formData.password
-      });
-
-      console.log('로그인 성공:', response.data);
-      
-      // 로그인 성공 시 사용자 정보를 localStorage에 저장
-      if (response.data.status === 'success' && response.data.data) {
-        localStorage.setItem('user', JSON.stringify(response.data.data));
-      }
-      
-      // 로그인 성공 시 홈으로 이동
-      navigate('/');
-    } catch (error) {
-      console.error('로그인 실패:', error);
-      if (error.response) {
-        // 서버에서 응답이 온 경우
-        const errorMsg = error.response.data?.message || error.response.statusText || '로그인에 실패했습니다.';
-        setErrorMessage(`로그인 실패: ${errorMsg}`);
-      } else if (error.request) {
-        // 요청은 보냈지만 응답을 받지 못한 경우
-        setErrorMessage('서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요.');
-      } else {
-        // 요청 설정 중 오류가 발생한 경우
-        setErrorMessage(`오류가 발생했습니다: ${error.message}`);
-      }
+    // login은 함수이고, AuthProvider에서 정의한다.
+    const { login } = useAuth();
+    const navigate = useNavigate();
+    // const handleEmailChange = (e) => {
+    //     setEmail(e.target.value);
+    //     console.log(email);
+    // }
+    // 위의 const handelEmailChange 와 동일한 함수이다.
+    function handleEmailChange(e) {
+        setEmail(e.target.value);
+        console.log(email);
     }
-  };
 
-  return (
-    <div className="login-container">
-      <h1>로그인</h1>
-      <form onSubmit={handleSubmit} className="login-form">
-        <div className="form-group">
-          <label htmlFor="email">이메일</label>
-          <input
-            type="email"
-            id="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-            placeholder="이메일을 입력하세요"
-          />
-        </div>
-        <div className="form-group">
-          <label htmlFor="password">패스워드</label>
-          <input
-            type="password"
-            id="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            required
-            placeholder="패스워드를 입력하세요"
-          />
-        </div>
-        <div className="form-actions">
-          <button type="submit" className="submit-btn">
-            로그인
-          </button>
-          <button type="button" onClick={() => navigate('/')} className="cancel-btn">
-            취소
-          </button>
-        </div>
-        {errorMessage && (
-          <div className="error-message">
-            {errorMessage}
-          </div>
-        )}
-      </form>
-    </div>
-  )
+    async function handleSubmit(e) {
+        e.preventDefault();
+        console.log('로그인 버튼 클릭됨.');
+        const data = {email, password};  // object 형태로 data를 구성함.
+
+        if (password === "") {
+            alert("비밀번호를 입력하세요.");
+            return;
+        }
+
+        try {
+            const response = await axios({
+                method: "post",
+                url: "/api/user/login",
+                data,
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            });
+            
+            console.log(response.data);
+            if (response.data.status === "success") {
+                // 로그인 처리 후 홈으로 이동
+                console.log(response.data.data);
+                login(response.data.data);
+                setErrMsg("");
+                navigate('/home');
+            }
+        } catch ( error ) {
+            // 에러처리
+            // console.log(error.message);
+            setErrMsg(error.response.data.message || "로그인 실패했습니다. 다시 시도 해주세요.");
+        }
+    }
+
+    return (
+        <>
+            <div className="login-container">
+                <h1>Login</h1>
+                <p>이메일과 패스워드를 입력하세요.</p>
+                <form onSubmit={handleSubmit} className="login-form">
+                    <div className="form-group">
+                        {/* 이메일 입력란 */}
+                        <input 
+                            type="email"
+                            placeholder="이메일"
+                            value={ email }
+                            onChange={handleEmailChange}
+                            className="border p-2 rounded"
+                            required
+                        />
+                        {/* 비밀번호 입력란 */}
+                        <input 
+                            type="password"
+                            placeholder="비밀번호"
+                            value={ password }
+                            onChange={(e)=> setPassword(e.target.value)}
+                            className="border p-2 rounded"
+                            required
+                        />
+                    </div>
+                    <button
+                        type="submit"
+                        className="mt-4 bg-blue-500 hover:bg-blue-600"
+                    >
+                        로그인
+                    </button>
+                    <button
+                        type="button"
+                        className="mt-4 ml-2 bg-gray-500 hover:bg-gray-600"
+                        onClick={() => navigate('/signup')}
+                    >
+                        회원가입
+                    </button>
+                </form>
+
+                {/* 에러 메시지 */}
+                {errMsg && (
+                    <p className="text-red-500">{ errMsg }</p>
+                )}
+
+            </div>
+        </>
+    );
 }
 
+export default Login;

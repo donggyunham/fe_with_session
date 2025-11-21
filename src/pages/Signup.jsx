@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
+import useAuth from '../hooks/useAuth.js'
 import '../App.css'
 
 export function Signup() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -40,8 +42,19 @@ export function Signup() {
       });
 
       console.log('회원가입 성공:', response.data);
-      // 회원가입 성공 페이지로 이동
-      navigate('/signup/success');
+      const responseUser = response.data?.data;
+      const normalizedUser = responseUser
+        ? {
+            ...responseUser,
+            nickname: responseUser.nickname ?? responseUser.nick_name ?? ''
+          }
+        : {
+            email: formData.email,
+            nickname: formData.nick_name,
+            id: null
+          };
+      login(normalizedUser);
+      navigate('/home');
     } catch (error) {
       console.error('회원가입 실패:', error);
       if (error.response) {
